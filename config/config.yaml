@@ -1,0 +1,38 @@
+project_name: tripletas_culturales_latam
+lang_priority: [es, pt, en]
+latam_search: [
+  "Argentina", "República Argentina", "argentino", "argentina", "argentinos", "argentinas", "Patagonia argentina", "Buenos Aires", "Cultura argentina", "Pampa argentina",
+  "Bolivia", "Estado Plurinacional de Bolivia", "boliviano", "boliviana", "bolivianos", "bolivianas", "Altiplano boliviano", "La Paz", "Cultura boliviana", "Andes bolivianos",
+  "Brasil", "República Federativa de Brasil", "brasileño", "brasileña", "brasileños", "brasileñas", "Amazonia brasileña", "Sao Paulo", "Rio de Janeiro", "Cultura brasileña",
+  "Chile", "República de Chile", "chileno", "chilena", "chilenos", "chilenas", "Patagonia chilena", "Santiago de Chile", "Norte Grande de Chile", "Zona central de Chile",
+  "Colombia", "República de Colombia", "colombiano", "colombiana", "colombianos", "colombianas", "Eje cafetero", "Bogotá", "Caribe colombiano", "Andes colombianos",
+  "Costa Rica", "República de Costa Rica", "costarricense", "costarricenses", "tico", "tica", "ticos", "ticas", "Valle Central de Costa Rica", "San José de Costa Rica",
+  "Cuba", "República de Cuba", "cubano", "cubana", "cubanos", "cubanas", "La Habana", "Caribe cubano", "Cultura cubana", "Isla de Cuba",
+  "República Dominicana", "dominicano", "dominicana", "dominicanos", "dominicanas", "Santo Domingo", "Caribe dominicano", "Cultura dominicana", "Quisqueya", "Béisbol dominicano",
+  "Ecuador", "República del Ecuador", "ecuatoriano", "ecuatoriana", "ecuatorianos", "ecuatorianas", "Quito", "Islas Galápagos", "Sierra ecuatoriana", "Costa ecuatoriana",
+  "El Salvador", "República de El Salvador", "salvadoreño", "salvadoreña", "salvadoreños", "salvadoreñas", "San Salvador", "Cultura salvadoreña", "Guerra civil de El Salvador", "Pacífico salvadoreño",
+  "Guatemala", "República de Guatemala", "guatemalteco", "guatemalteca", "guatemaltecos", "guatemaltecas", "Ciudad de Guatemala", "Antigua Guatemala", "Altiplano guatemalteco", "Cultura guatemalteca",
+  "Honduras", "República de Honduras", "hondureño", "hondureña", "hondureños", "hondureñas", "Tegucigalpa", "Caribe hondureño", "Islas de la Bahía", "Cultura hondureña",
+  "México", "Estados Unidos Mexicanos", "mexicano", "mexicana", "mexicanos", "mexicanas", "Ciudad de México", "Norte de México", "Bajío mexicano", "Cultura mexicana",
+  "Nicaragua", "República de Nicaragua", "nicaragüense", "nicaragüenses", "Managua", "Caribe nicaragüense", "Pacífico nicaragüense", "Lago de Nicaragua", "Cultura nicaragüense", "Centroamérica (Nicaragua)",
+  "Panamá", "República de Panamá", "panameño", "panameña", "panameños", "panameñas", "Ciudad de Panamá", "Canal de Panamá", "Caribe panameño", "Pacífico panameño",
+  "Paraguay", "República del Paraguay", "paraguayo", "paraguaya", "paraguayos", "paraguayas", "Asunción", "Chaco paraguayo", "Guaraní (Paraguay)", "Cultura paraguaya",
+  "Perú", "República del Perú", "peruano", "peruana", "peruanos", "peruanas", "Lima", "Andes peruanos", "Costa peruana", "Machu Picchu",
+  "Puerto Rico", "Estado Libre Asociado de Puerto Rico", "puertorriqueño", "puertorriqueña", "puertorriqueños", "puertorriqueñas", "San Juan de Puerto Rico", "Isla del Encanto", "Cultura puertorriqueña", "Caribe puertorriqueño",
+  "Uruguay", "República Oriental del Uruguay", "uruguayo", "uruguaya", "uruguayos", "uruguayas", "Montevideo", "Río de la Plata", "Litoral uruguayo", "Cultura uruguaya",
+  "Venezuela", "República Bolivariana de Venezuela", "venezolano", "venezolana", "venezolanos", "venezolanas", "Caracas", "Llanos venezolanos", "Guayana venezolana", "Petróleo en Venezuela"
+]
+min_confidence_rel: 0.55
+min_confidence_attr: 0.60
+keep_snippets: true
+sources:
+  wikipedia: true
+  wikidata: false
+  generic_scrape: true
+llm:
+  use_llm_attributes: false   # activar si quieres LLM para atributos literales
+paths:
+  raw: data/raw
+  interim: data/interim
+  triples: data/triples
+  exports: data/exports

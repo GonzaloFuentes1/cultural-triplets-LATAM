@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tripletas-culturales-latam"
+version = "0.1.0"
+description = "Pipeline para extraer tripletas culturales (Entidad–Relación–Valor) con GLiNER + GLiREL"
+authors = [{name = "Tu Nombre"}]
+requires-python = ">=3.10"
+dependencies = [
+  "typer>=0.12",
+  "tqdm>=4.66",
+  "requests>=2.32",
+  "beautifulsoup4>=4.12",
+  "pandas>=2.2",
+  "pyyaml>=6.0",
+  "pydantic>=2.8",
+  "rapidfuzz>=3.9",
+  "python-dateutil>=2.9",
+  "regex>=2024.5.15",
+  "torch>=2.1; platform_system!='Darwin'",
+]
+
+[project.optional-dependencies]
+parquet = ["pyarrow>=16.0"]
+neo4j = ["numpy>=1.26"]
+
+[project.scripts]
+tripletas = "src.cli:app"
