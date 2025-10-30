@@ -22,15 +22,266 @@ latam_search: [
   "Uruguay", "República Oriental del Uruguay", "uruguayo", "uruguaya", "uruguayos", "uruguayas", "Montevideo", "Río de la Plata", "Litoral uruguayo", "Cultura uruguaya",
   "Venezuela", "República Bolivariana de Venezuela", "venezolano", "venezolana", "venezolanos", "venezolanas", "Caracas", "Llanos venezolanos", "Guayana venezolana", "Petróleo en Venezuela"
 ]
-min_confidence_rel: 0.55
-min_confidence_attr: 0.60
-keep_snippets: true
+chunk_chars: 2048
+
+# Configuración de procesamiento de texto
+text_processing:
+  use_trafilatura: true         # Usar trafilatura en lugar de BeautifulSoup
+  use_improved_segmentation: true  # Usar segmentación mejorada
+  min_chunk_size: 30           # Tamaño mínimo de chunk en caracteres
+  clean_wikipedia_refs: true   # Limpiar referencias de Wikipedia
+
+# Configuración de calidad y normalización de tripletas
+quality_control:
+  # Filtros básicos
+  min_entity_length: 2         # Entidades mínimo 2 caracteres
+  max_entity_length: 100       # Entidades máximo 100 caracteres
+  min_connections_per_entity: 1  # Mínimo conexiones por entidad
+  min_confidence_threshold: 0.35 # Confianza mínima requerida para mantener tripleta
+  
+  # Filtros de entidades genéricas a eliminar (solo las más básicas)
+  generic_entities: ["a", "el", "la", "un", "una", "de", "del", "en", "con", "por", "para", "que", "es", "fue", "ser", "estar", "tiene", "tuvo", "año", "años", "día", "días", "vez", "veces", "parte", "lugar", "tiempo", "forma", "manera", "cosa", "persona", "grupo", "sistema", "proceso", "momento", "problema", "ejemplo", "caso", "tipo", "nivel", "punto", "área", "zona", "ciudad", "estado", "país", "región", "centro", "base", "total", "número", "medida", "relación", "momento", "situación", "actividad", "función", "posición", "espacio", "lugar", "origen", "causa", "fin", "objetivo", "valor", "precio", "información", "dato", "evento", "cambio", "desarrollo", "resultado", "método", "técnica", "recurso", "servicio", "trabajo", "organización", "empresa", "mercado", "operación", "conexión", "asociación", "equipo", "conjunto", "elemento", "aspecto", "característica", "propiedad", "imagen", "formato", "proyecto", "programa", "red", "cantidad", "dimensión", "proporción", "diferencia", "conflicto", "discusión", "comunicación", "contacto", "reunión", "conferencia", "curso", "sesión", "período", "etapa", "segundo", "minuto", "hora", "semana", "mes", "década", "siglo", "época", "edad", "generación", "presente", "futuro", "antes", "después", "ahora", "entonces", "mientras", "durante", "desde", "hasta", "entre", "sobre", "bajo", "ante", "tras", "contra", "hacia", "según", "sin", "mediante", "dentro", "fuera", "encima", "debajo", "delante", "detrás", "alrededor", "cerca", "lejos", "aquí", "allí", "donde", "cuando", "como", "porque", "si", "aunque", "pero", "sino", "o", "y", "ni", "tampoco", "también", "además", "incluso", "solo", "sólo", "solamente", "únicamente", "especialmente", "particularmente", "principalmente", "básicamente", "fundamentalmente", "esencialmente", "realmente", "verdaderamente", "efectivamente", "ciertamente", "seguramente", "probablemente", "posiblemente", "quizás", "tal vez", "acaso", "apenas", "casi", "más", "menos", "muy", "mucho", "poco", "bastante", "demasiado", "tanto", "tan", "cuanto", "cual", "quien", "que", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
+  
+  # Pares de tipos incompatibles (usando etiquetas reales de mREBEL)
+  incompatible_type_pairs:
+    # Incompatibilidades temporales básicas (mantener solo las más obvias)
+    - ["date", "date"]                        # Fechas no se relacionan entre sí directamente
+    - ["point in time", "point in time"]      # Momentos temporales no se relacionan entre sí  
+    - ["time", "time"]                        # Tiempos no se relacionan entre sí
+    - ["year", "year"]                        # Años no se relacionan entre sí directamente
+    
+    # Incompatibilidades numéricas
+    - ["num", "num"]                          # Números no se relacionan entre sí
+    - ["quantity", "quantity"]                # Cantidades no se relacionan entre sí
+    - ["number", "number"]                    # Números puros no se relacionan entre sí
+    
+    # NOTA: Removidas reglas muy restrictivas como ["concept", "concept"] y ["misc", "misc"]
+    # que estaban filtrando demasiadas tripletas válidas en contextos culturales
+    
+    # Auto-referencias imposibles
+    - ["per", "per", "parent", "self"]        # Una persona no puede ser padre/madre de sí misma
+    - ["per", "per", "child", "self"]         # Una persona no puede ser hijo/hija de sí misma
+    - ["per", "per", "spouse", "self"]        # Una persona no puede ser esposo/a de sí misma
+    - ["per", "per", "sibling", "self"]       # Una persona no puede ser hermano/a de sí misma
+    - ["loc", "loc", "contains", "self"]      # Una ubicación no puede contenerse a sí misma
+    - ["loc", "loc", "capital", "self"]       # Una ubicación no puede ser capital de sí misma
+    - ["loc", "loc", "country", "self"]       # Una ubicación no puede ser país de sí misma
+    - ["org", "org", "subsidiary", "self"]    # Una organización no puede ser subsidiaria de sí misma
+    - ["org", "org", "parent company", "self"] # Una organización no puede ser empresa madre de sí misma
+    - ["eve", "eve", "follows", "self"]       # Un evento no puede seguirse a sí mismo
+    - ["eve", "eve", "part of", "self"]       # Un evento no puede ser parte de sí mismo
+    - ["eve", "eve", "preceded by", "self"]   # Un evento no puede ser precedido por sí mismo
+    
+    # Incompatibilidades de género en ocupaciones/roles
+    - ["per-male", "per", "occupation", "reina"]      # Hombres no pueden ser reina
+    - ["per-male", "per", "occupation", "emperatriz"] # Hombres no pueden ser emperatriz
+    - ["per-male", "per", "occupation", "actriz"]     # Hombres no pueden ser actriz
+    - ["per-male", "per", "occupation", "presidenta"] # Hombres no pueden ser presidenta
+    - ["per-female", "per", "occupation", "rey"]      # Mujeres no pueden ser rey
+    - ["per-female", "per", "occupation", "emperador"] # Mujeres no pueden ser emperador
+    - ["per-female", "per", "occupation", "actor"]    # Mujeres no pueden ser actor
+    - ["per-female", "per", "occupation", "presidente"] # Mujeres no pueden ser presidente
+    
+    # Incompatibilidades geográficas (solo las más obvias)
+    # NOTA: Removidas reglas como ["loc", "loc", "country", "multiple"] que eran demasiado restrictivas
+    
+    # Incompatibilidades temporales imposibles
+    - ["per", "date", "date of birth", "future"]     # Personas no pueden nacer en el futuro
+    - ["per", "date", "date of death", "before_birth"] # Personas no pueden morir antes de nacer
+    - ["eve", "date", "start time", "future"]        # Eventos históricos no pueden empezar en el futuro
+    - ["eve", "date", "end time", "before_start"]    # Eventos no pueden terminar antes de empezar
+    
+    # Incompatibilidades de tipo de entidad mixtas
+    - ["per", "org", "instance of", "mixed"]      # Una entidad no puede ser persona y organización
+    - ["per", "loc", "instance of", "mixed"]      # Una entidad no puede ser persona y lugar
+    - ["org", "loc", "instance of", "mixed"]      # Una entidad no puede ser organización y lugar
+    - ["per", "eve", "instance of", "mixed"]      # Una entidad no puede ser persona y evento
+    - ["org", "eve", "instance of", "mixed"]      # Una entidad no puede ser organización y evento
+    - ["loc", "eve", "instance of", "mixed"]      # Una entidad no puede ser lugar y evento
+
+    # NUEVOS FILTROS PARA ENTIDADES TEMPORALES MAL CLASIFICADAS
+    # Años/fechas no pueden ser eventos con ganadores, participantes, etc.
+    - ["time", "per", "winner", "invalid"]           # Un año no puede tener ganador
+    - ["time", "per", "participant", "invalid"]      # Un año no puede tener participante  
+    - ["time", "org", "winner", "invalid"]           # Un año no puede tener organización ganadora
+    - ["time", "org", "participant", "invalid"]      # Un año no puede tener organización participante
+    - ["date", "per", "winner", "invalid"]           # Una fecha no puede tener ganador
+    - ["date", "per", "participant", "invalid"]      # Una fecha no puede tener participante
+    - ["date", "org", "winner", "invalid"]           # Una fecha no puede tener organización ganadora
+    - ["date", "org", "participant", "invalid"]      # Una fecha no puede tener organización participante
+    
+    # Años clasificados incorrectamente como eventos
+    - ["eve", "per", "winner", "year_like"]          # Si head parece año, no puede ser evento con ganador
+    - ["eve", "per", "participant", "year_like"]     # Si head parece año, no puede ser evento con participante
+    - ["eve", "org", "winner", "year_like"]          # Si head parece año, no puede ser evento con org ganadora
+    - ["eve", "org", "participant", "year_like"]     # Si head parece año, no puede ser evento con org participante
+    
+    # Números puros no pueden ser eventos
+    - ["num", "per", "winner", "invalid"]            # Un número no puede tener ganador
+    - ["num", "per", "participant", "invalid"]       # Un número no puede tener participante
+    - ["num", "org", "winner", "invalid"]            # Un número no puede tener org ganadora
+    - ["num", "org", "participant", "invalid"]       # Un número no puede tener org participante
+    
+    # Conceptos temporales básicos no pueden ser eventos complejos
+    - ["concept", "per", "winner", "temporal"]       # Conceptos temporales no tienen ganadores
+    - ["concept", "per", "participant", "temporal"]  # Conceptos temporales no tienen participantes
+    - ["concept", "org", "winner", "temporal"]       # Conceptos temporales no tienen org ganadoras
+    - ["concept", "org", "participant", "temporal"]  # Conceptos temporales no tienen org participantes
+
+  # Reglas de validación inteligentes
+  validation_patterns:
+    # Patrones de validación geográfica
+    geographic_consistency:
+      unique_country_per_location: true        # Una ubicación solo puede estar en un país
+      unique_capital_per_country: true         # Un país solo puede tener una capital
+      continental_consistency: true            # Validar continente correcto por país
+      administrative_hierarchy: true           # Validar jerarquía administrativa (ciudad->provincia->país)
+    
+    # Patrones de validación de eventos/competencias
+    event_consistency:
+      unique_winner_per_event: true            # Un evento solo puede tener un ganador
+      unique_champion_per_tournament: true     # Un torneo solo puede tener un campeón
+      unique_end_time_per_event: true          # Un evento solo puede tener una fecha de fin
+      unique_start_time_per_event: true        # Un evento solo puede tener una fecha de inicio
+    
+    # Patrones de validación temporal MEJORADOS
+    temporal_consistency:
+      event_date_ranges: {}
+      century_validation: true                 # Validar que las fechas sean del siglo correcto
+      chronological_order: true               # start_time debe ser antes que end_time
+      
+      # NUEVAS VALIDACIONES TEMPORALES
+      year_as_event_filter: true              # Filtrar años puros clasificados como eventos
+      date_as_event_filter: true              # Filtrar fechas puras clasificadas como eventos
+      temporal_entity_relations: true         # Validar relaciones lógicas de entidades temporales
+      
+      # Patrones de años que NO pueden ser eventos con ganadores/participantes
+      invalid_year_patterns:
+        - "^\\d{4}$"                          # Años de 4 dígitos (ej: "2019", "2020")
+        - "^\\d{1,2} \\w+ \\d{4}$"            # Fechas simples (ej: "15 marzo 2020")
+        - "^\\w+ \\d{4}$"                     # Mes + año (ej: "marzo 2020")
+        - "^\\d{4}-\\d{2}-\\d{2}$"            # Fechas ISO (ej: "2020-03-15")
+      
+      # Relaciones incompatibles con entidades temporales
+      temporal_incompatible_relations:
+        - "winner"                            # Entidades temporales no tienen ganadores
+        - "participant"                       # Entidades temporales no tienen participantes
+        - "performer"                         # Entidades temporales no tienen intérpretes
+        - "competitor"                        # Entidades temporales no tienen competidores
+        - "champion"                          # Entidades temporales no tienen campeones
+        - "contestant"                        # Entidades temporales no tienen concursantes
+
+    # Patrones de validación semántica
+    semantic_validation:
+      relation_entity_compatibility:           # Compatibilidad relación-tipo de entidad
+        "country": ["loc"]                     # Solo ubicaciones pueden tener país
+        "country of citizenship": ["per"]      # Solo personas tienen ciudadanía
+        "occupation": ["per"]                  # Solo personas pueden tener ocupación
+        "place of birth": ["per"]             # Solo personas tienen lugar de nacimiento
+        "date of birth": ["per"]              # Solo personas tienen fecha de nacimiento
+        "date of death": ["per"]              # Solo personas tienen fecha de muerte
+        "headquarters location": ["org"]       # Solo organizaciones tienen sede
+        "founded": ["org", "loc"]              # Organizaciones y lugares pueden ser fundados
+        "capital": ["loc"]                     # Solo ubicaciones pueden ser capital
+        "participant": ["per", "org", "loc"]   # Múltiples tipos pueden participar
+        "child": ["per"]                       # Solo personas pueden ser hijos
+        "parent": ["per"]                      # Solo personas pueden ser padres
+        "follows": ["eve", "date", "time"]     # Eventos y fechas pueden seguir a otros
+        "part of": ["loc", "org", "eve"]       # Múltiples tipos pueden ser parte de algo
+        "contains": ["loc", "org"]             # Ubicaciones y organizaciones pueden contener
+      
+      mutual_exclusivity:                      # Relaciones mutuamente excluyentes
+        - ["country", "capital"]               # Una entidad no puede ser país y capital a la vez
+        - ["person", "organization"]           # Una entidad no puede ser persona y organización
+        - ["location", "event"]                # Una entidad no puede ser lugar y evento
+        
+        # Nuevos patrones encontrados en análisis de tripletas:
+        - ["time", "date"]                     # Tiempo y fecha no deberían relacionarse directamente
+        - ["concept", "concept"]               # Conceptos abstractos autoreferenciándose
+        - ["media", "media"]                   # Medios autoreferenciándose
+        - ["number", "entity"]                 # Números puros no son entidades principales válidas
+        
+        # Auto-referencias problemáticas detectadas:
+        - ["same_entity", "any_relation"]      # Entidad idéntica como head y tail
+        - ["location_self", "located_in"]      # Ubicación no puede estar ubicada en sí misma
+        - ["concept_self", "subclass_of"]      # Concepto no puede ser subclase de sí mismo
+        - ["concept_self", "facet_of"]         # Concepto no puede ser faceta de sí mismo
+        - ["concept_self", "follows"]          # Concepto no puede seguirse a sí mismo
+        
+        # Combinaciones imposibles por lógica:
+        - ["per", "org", "member_of_impossible"] # Verificar lógica de membresía persona-organización
+        - ["date_as_entity", "point_in_time"]   # Fechas no deberían ser entidades que apuntan a sí mismas
+        - ["year_entity", "temporal_relation"]  # Años como entidades en relaciones temporales circulares
+        
+        # NUEVOS PATRONES DE SEGUNDA RONDA:
+        # Relaciones circulares problemáticas:
+        - ["same_type", "follows"]              # Entidades del mismo tipo no deberían "seguirse" directamente
+        - ["same_type", "preceded_by"]          # Entidades del mismo tipo no deberían "precederse" directamente  
+        - ["same_type", "part_of"]              # Entidades del mismo tipo con relaciones "part of" circulares
+        
+        # Entidades temporales como heads principales:
+        - ["temporal_word", "main_entity"]      # Meses, años, números como entidades principales
+        - ["numeric_year", "relation"]          # Años numéricos como entidades principales
+        - ["month_name", "relation"]            # Nombres de meses como entidades principales
+        
+        # Conceptos abstractos con relaciones físicas:
+        - ["concept", "physical_location"]      # Conceptos abstractos no tienen ubicación física
+        - ["abstract", "country"]               # Entidades abstractas no tienen país
+        - ["concept", "headquarters_location"]  # Conceptos no tienen sede física
+        
+        # Conflictos de entidad específicos:
+        - ["media_work", "geographic"]          # Obras/medios no son entidades geográficas
+        - ["event", "country_impossible"]       # Algunos eventos no pueden tener país de forma lógica
+        - ["organization", "non_temporal"]      # Organizaciones en relaciones temporales imposibles
+    
+  # Relaciones a filtrar (muy genéricas o problemáticas)
+  filtered_relations: ["is", "was", "were", "are", "been", "be", "has", "have", "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "can", "must", "shall", "es", "fue", "fueron", "son", "ha", "han", "había", "habían", "será", "serán", "sería", "serían", "tiene", "tienen", "tenía", "tenían", "tendrá", "tendrán", "tendría", "tendrían", "hace", "hacen", "hacía", "hacían", "hará", "harán", "haría", "harían", "puede", "pueden", "podía", "podían", "podrá", "podrán", "podría", "podrían", "debe", "deben", "debía", "debían", "deberá", "deberán", "debería", "deberían"]
+
+normalization:
+  # Reglas de unicidad - solo una relación permitida por tipo
+  unique_relations:
+    PERSON:
+      - "country of citizenship"  # Una persona, un país de ciudadanía
+      - "place of birth"          # Una persona, un lugar de nacimiento
+      - "date of birth"           # Una persona, una fecha de nacimiento
+      - "date of death"           # Una persona, una fecha de muerte
+    ORGANIZATION:
+      - "headquarters location"   # Una organización, una sede
+      - "founded"                 # Una organización, una fecha de fundación
+      
+  # Múltiples relaciones permitidas por tipo
+  multiple_relations:
+    PERSON:
+      - "occupation"              # Una persona puede tener múltiples trabajos
+      - "educated at"             # Una persona puede estudiar en varios lugares
+      - "award received"          # Una persona puede recibir múltiples premios
+    ORGANIZATION:
+      - "subsidiary"              # Una organización puede tener múltiples subsidiarias
+      - "owns"                    # Una organización puede poseer múltiples entidades
+      
+  # Normalización de entidades similares
+  entity_normalization:
+    enabled: true
+    similarity_threshold: 0.85   # Umbral de similitud para fusionar entidades
+    neighbor_window: 50          # Cuántos vecinos comparar en fuzzy matching
+    large_cluster_threshold: 400 # Umbral para clusters grandes (debug info)
+    uniqueness_confidence_margin: 0.05  # Margen para conservar tripletas con confianza similar
+    case_sensitive: false        # Ignorar mayúsculas/minúsculas
+    remove_accents: true         # Normalizar acentos
+
+# Configuración de paralelización
+parallelization:
+  max_processes: 8              # Número máximo de procesos para usar en paralelización
+  chunk_size: 1000              # Tamaño de chunk para procesamiento en lotes
+  
 sources:
   wikipedia: true
   wikidata: false
   generic_scrape: true
+
 llm:
   use_llm_attributes: false   # activar si quieres LLM para atributos literales
+
 paths:
   raw: data/raw
   interim: data/interim
